@@ -19,6 +19,8 @@ pipeline{
         registryCredential='ecr:ap-south-1:awscreds'
         appRegistry='540859794481.dkr.ecr.ap-south-1.amazonaws.com/vprofileappimg'
         vprofileRegistry='https://540859794481.dkr.ecr.ap-south-1.amazonaws.com'
+        cluster='staging'
+        service='vproappstagesvc'
 
     }
     stages{
@@ -106,11 +108,20 @@ pipeline{
                 }
             }
         }
+        stage('Deploy to ECS staging'){
+            steps{
+                withAWS( credentials: 'awscreds' , region: 'ap-south-1'){
+                    sh 'aws ecs update-service --cluster ${cluster} --service ${service} --force-new-deployment'
+                }
+
+            }
+        }
     }
     post {
         always {
             echo 'Slack Notifications.'
-            slackSend channel: '#jenkinscicd',
+            slackSend channel: '#jenkinscicd','awscreds' , region: 'ap-south-1'
+
                // color: COLOR_MAP[currentBuild.currentResult],
                 message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
         }
